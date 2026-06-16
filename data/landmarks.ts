@@ -2,13 +2,13 @@ import type { Landmark } from "@/types/cheermark";
 
 export const landmarks: Landmark[] = [
   {
-    id: "christ-redeemer",
+    id: "sugarloaf",
     countryId: "brazil",
-    name: "Christ the Redeemer",
+    name: "Sugarloaf Mountain",
     city: "Rio de Janeiro, Brazil",
-    description: "Iconic statue overlooking Rio",
-    imageUrl: "/landmarks/christ-redeemer.png",
-    promptHint: "Christ the Redeemer statue on Corcovado mountain at night",
+    description: "Iconic granite peak over Guanabara Bay",
+    imageUrl: "/landmarks/sugarloaf.png",
+    promptHint: "Sugarloaf Mountain Pao de Acucar rising over Guanabara Bay in Rio de Janeiro at night with cable car and city lights",
   },
   {
     id: "brandenburg-gate",
@@ -38,13 +38,13 @@ export const landmarks: Landmark[] = [
     promptHint: "Big Ben and Westminster at night",
   },
   {
-    id: "sagrada-familia",
+    id: "camp-nou",
     countryId: "spain",
-    name: "Sagrada Família",
+    name: "Camp Nou",
     city: "Barcelona, Spain",
-    description: "Gaudí's unfinished basilica",
-    imageUrl: "/landmarks/sagrada-familia.png",
-    promptHint: "Sagrada Familia basilica in Barcelona at night",
+    description: "iconic football stadium, home of FC Barcelona",
+    imageUrl: "/landmarks/camp-nou.png",
+    promptHint: "Camp Nou football stadium in Barcelona Spain at night with floodlights and green pitch glowing",
   },
   {
     id: "obelisco",
