@@ -19,8 +19,6 @@ const STAGES = [
   { pct: 90, label: "Almost there…" }, // caps at 90 — only reaches 100 on real done
 ];
 
-const MAX_POLL_COUNT = 40; // ~2 min at 3s interval
-
 function GeneratingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,7 +28,6 @@ function GeneratingInner() {
   const [countdown, setCountdown] = useState(0);
   const calledRef = useRef(false);
   const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollCountRef = useRef(0);
 
   // parse config from URL — stable reference
   const config = useMemo(() => searchParamsToGlowConfig(searchParams), [searchParams]);
@@ -59,12 +56,6 @@ function GeneratingInner() {
     }, 2200);
   }, []);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-  }, []);
-
   const startRetryCountdown = useCallback((retryFn: () => void) => {
     setFailed(true);
     setProgress(0);
@@ -82,63 +73,33 @@ function GeneratingInner() {
     }, 1000);
   }, []);
 
-  // core async flow: POST /start → poll /status every 3s
+  // Synchronous generation: POST /start waits for imageUrl directly
   const runGenerate = useCallback(() => {
     if (!payload) return;
     setFailed(false);
     setCountdown(0);
     startTicker();
-    stopPolling();
-
-    pollCountRef.current = 0;
 
     fetch("/api/generate/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(45_000),
     })
       .then(r => r.json())
-      .then(({ jobId, error }) => {
-        if (error || !jobId) throw new Error(error ?? "No jobId");
-
-        // poll every 3 seconds, max MAX_POLL_COUNT times
-        pollRef.current = setInterval(() => {
-          pollCountRef.current += 1;
-
-          // Hit the ceiling — treat as failure, trigger retry UI
-          if (pollCountRef.current > MAX_POLL_COUNT) {
-            stopPolling();
-            if (tickerRef.current) clearInterval(tickerRef.current);
-            startRetryCountdown(runGenerate);
-            return;
-          }
-
-          fetch(`/api/generate/status?jobId=${jobId}`)
-            .then(r => r.json())
-            .then(job => {
-              if (job.status === "done" && job.imageUrl) {
-                stopPolling();
-                if (tickerRef.current) clearInterval(tickerRef.current);
-                setProgress(100);
-                setStageLabel("Done!");
-                const dest = `/result?imageUrl=${encodeURIComponent(job.imageUrl)}&${configQs}`;
-                setTimeout(() => router.push(dest), 400);
-              } else if (job.status === "failed") {
-                stopPolling();
-                if (tickerRef.current) clearInterval(tickerRef.current);
-                startRetryCountdown(runGenerate);
-              }
-              // "pending" → keep polling
-            })
-            .catch(() => { /* network blip, keep polling */ });
-        }, 3000);
+      .then(({ imageUrl, error }) => {
+        if (error || !imageUrl) throw new Error(error ?? "No image URL");
+        if (tickerRef.current) clearInterval(tickerRef.current);
+        setProgress(100);
+        setStageLabel("Done!");
+        const dest = `/result?imageUrl=${encodeURIComponent(imageUrl)}&${configQs}`;
+        setTimeout(() => router.push(dest), 400);
       })
       .catch(() => {
         if (tickerRef.current) clearInterval(tickerRef.current);
         startRetryCountdown(runGenerate);
       });
-  }, [payload, router, configQs, startTicker, stopPolling, startRetryCountdown]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [payload, router, configQs, startTicker, startRetryCountdown]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // fire once on mount
   useEffect(() => {
@@ -147,7 +108,6 @@ function GeneratingInner() {
     runGenerate();
     return () => {
       if (tickerRef.current) clearInterval(tickerRef.current);
-      if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [runGenerate]);
 

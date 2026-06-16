@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createDbClient, type DbClient, type SqlClient } from "@/db";
-import { createJob, updateJob } from "@/lib/cheermark/job-store";
 import { buildComicPrompt } from "@/lib/cheermark/prompt-styles";
 
-/** Cloudflare ExecutionContext — only available on Workers runtime. */
-async function getWaitUntil(): Promise<((p: Promise<unknown>) => void) | null> {
-  try {
-    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
-    const { ctx } = await getCloudflareContext({ async: true });
-    return ctx.waitUntil.bind(ctx);
-  } catch {
-    return null;
-  }
-}
+export const maxDuration = 60;
 
 const REACTUS_BASE_URL = process.env.REACTUS_BASE_URL ?? "";
 const API_KEY = process.env.HAPPYSEEDS_KEY ?? "";
@@ -98,11 +87,11 @@ async function callImageApi(prompt: string): Promise<string> {
       "x-bty-model": MODEL,
     },
     body: JSON.stringify({ model: MODEL, prompt, size: "1440x2560", output_format: "png", watermark: false }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`upstream ${res.status}: ${txt.slice(0, 200)}`);
+    throw new Error(`upstream ${res.status}: ${txt.slice(0, 300)}`);
   }
   const data = await res.json();
   const url: string | undefined = data?.data?.[0]?.url;
@@ -116,75 +105,48 @@ async function persistToOss(rawUrl: string): Promise<string> {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
       body: JSON.stringify({ project_id: PROJECT_ID, url: rawUrl }),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(10_000),
     });
     if (ossRes.ok) {
       const d = await ossRes.json();
       if (d?.data) return d.data;
     }
-  } catch { /* best-effort */ }
+  } catch { /* best-effort fallback to raw url */ }
   return rawUrl;
 }
 
 /**
- * Background job: runs inside waitUntil — connection lifecycle follows the work,
- * not the HTTP response. sql.end() is called in finally so the connection is
- * always released even if generation fails.
+ * Synchronous image generation — runs entirely within the request lifetime.
+ * CF Workers holds open requests with pending I/O indefinitely (no 30s cap),
+ * so this is reliable where waitUntil background tasks are not.
+ * Retries once on failure to handle transient upstream errors.
  */
-async function runJob(
-  db: DbClient,
-  sql: SqlClient,
-  jobId: string,
-  payload: Record<string, unknown>,
-) {
+export async function POST(req: NextRequest) {
+  let payload: Record<string, unknown>;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
   const prompt = buildPrompt(payload);
   let lastError = "";
 
-  try {
-    // Attempt up to 2 times
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const rawUrl = await callImageApi(prompt);
-        const finalUrl = await persistToOss(rawUrl);
-        await updateJob(db, jobId, { status: "done", imageUrl: finalUrl });
-        return;
-      } catch (err) {
-        lastError = err instanceof Error ? err.message : String(err);
-        if (attempt < 2) {
-          await new Promise(r => setTimeout(r, 2000));
-        }
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const rawUrl = await callImageApi(prompt);
+      const imageUrl = await persistToOss(rawUrl);
+      return NextResponse.json({ imageUrl });
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      if (attempt < 2) {
+        await new Promise(r => setTimeout(r, 1500));
       }
     }
-    await updateJob(db, jobId, { status: "failed", error: lastError });
-  } finally {
-    // Always release the connection after the job completes (or fails)
-    await sql.end({ timeout: 5 }).catch(() => {});
-  }
-}
-
-export async function POST(req: NextRequest) {
-  const payload = await req.json();
-  const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-  // Per-request connection for createJob (used before response is sent)
-  const { db: reqDb, sql: reqSql } = createDbClient();
-  try {
-    await createJob(reqDb, jobId);
-  } finally {
-    await reqSql.end({ timeout: 5 }).catch(() => {});
   }
 
-  // Separate connection for the background job — its lifetime extends past
-  // the HTTP response, so we close it inside runJob's finally block.
-  const { db: jobDb, sql: jobSql } = createDbClient();
-  const jobPromise = runJob(jobDb, jobSql, jobId, payload);
-
-  // On Cloudflare Workers, waitUntil keeps the isolate alive until the job finishes.
-  const waitUntil = await getWaitUntil();
-  if (waitUntil) {
-    waitUntil(jobPromise);
-  }
-  // On Node.js dev server: fire-and-forget (process stays alive anyway)
-
-  return NextResponse.json({ jobId });
+  return NextResponse.json(
+    { error: "Image generation failed", detail: lastError },
+    { status: 500 },
+  );
 }
