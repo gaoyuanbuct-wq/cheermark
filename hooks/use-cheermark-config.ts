@@ -13,7 +13,7 @@ export function useCheermarkConfig() {
   const [awayCountryId, setAwayCountryId] = useState("germany");
   const [homeScore, setHomeScore] = useState(4);
   const [awayScore, setAwayScore] = useState(1);
-  const [landmarkId, setLandmarkId] = useState("christ-redeemer");
+  const [landmarkId, setLandmarkId] = useState("sugarloaf");
   const [selectedEffects, setSelectedEffects] = useState<EffectType[]>([
     "light-projection",
   ]);
