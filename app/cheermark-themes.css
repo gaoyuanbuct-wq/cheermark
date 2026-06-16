@@ -1,0 +1,234 @@
+/* CheerMark page-style themes — loaded separately so dev HMR always picks up changes */
+
+html[data-page-style="stadium"],
+html:not([data-page-style]) {
+  --cm-bg-image: url("/styles/stadium-bg.svg");
+}
+
+html[data-page-style="stadium"] body,
+html:not([data-page-style]) body {
+  background-color: #04120b;
+}
+
+html[data-page-style="stadium"] .cm-page,
+html:not([data-page-style]) .cm-page {
+  background-color: var(--cm-bg);
+  background-image:
+    var(--cm-bg-image),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 230, 118, 0.08), transparent),
+    linear-gradient(rgba(0, 230, 118, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 230, 118, 0.025) 1px, transparent 1px);
+  background-size: cover, 100% 100%, 42px 42px, 42px 42px;
+  background-position: center top, center, center, center;
+  background-attachment: fixed, scroll, scroll, scroll;
+}
+
+/* ── Comic Pop — full cartoon makeover ── */
+html[data-page-style="comic"] {
+  --cm-bg: #fff5d6;
+  --cm-bg-panel: #fffef8;
+  --cm-bg-card: #ffffff;
+  --cm-bg-card-hover: #fff8e8;
+  --cm-green: #43a047;
+  --cm-green-bright: #66bb6a;
+  --cm-purple: #c62828;
+  --cm-purple-bright: #ef5350;
+  --cm-celebrate-accent: #2e7d32;
+  --cm-roast-accent: #c62828;
+  --cm-amber: #ff6b35;
+  --cm-text: #1a1208;
+  --cm-text-muted: #6b5a3e;
+  --cm-border: #1a1208;
+  --cm-border-soft: rgba(26, 18, 8, 0.25);
+  --cm-bg-image: url("/styles/comic-bg.svg");
+  --cm-font-display: var(--font-fredoka), "Trebuchet MS", sans-serif;
+  --cm-font-bubble: var(--font-chewy), "Comic Sans MS", cursive;
+  --cm-font-body: var(--font-fredoka), "Trebuchet MS", sans-serif;
+  --cm-font-script: var(--font-patrick-hand), "Comic Sans MS", cursive;
+}
+
+html[data-page-style="comic"] body {
+  background-color: #fff5d6;
+  color: #1a1208;
+  font-family: var(--cm-font-body);
+  font-weight: 500;
+}
+
+html[data-page-style="comic"] .cm-page {
+  background-color: #fff5d6;
+  background-image: url("/styles/comic-bg.svg");
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  font-family: var(--cm-font-body);
+}
+
+html[data-page-style="comic"] .cm-style-heading,
+html[data-page-style="comic"] h2,
+html[data-page-style="comic"] h3 {
+  font-family: var(--cm-font-display);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+html[data-page-style="comic"] .cm-comic-bubble {
+  font-family: var(--cm-font-bubble);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+/* Single-layer comic depth — never combine with text-stroke */
+html[data-page-style="comic"] .cm-comic-pop-text {
+  text-shadow: 1px 1px 0 rgba(26, 18, 8, 0.35);
+}
+
+html[data-page-style="comic"] .cm-comic-script {
+  font-family: var(--cm-font-script);
+  font-weight: 700;
+  font-size: 1.12rem;
+  line-height: 1.35;
+}
+
+html[data-page-style="comic"] .cm-comic-label {
+  font-family: var(--cm-font-display);
+  font-weight: 600;
+}
+
+html[data-page-style="comic"] .cm-logo-mark .cm-style-heading {
+  font-size: 1.5rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+html[data-page-style="comic"] .cm-panel,
+html[data-page-style="comic"] .cm-card {
+  border-width: 3px;
+  border-color: var(--cm-border);
+  box-shadow: 4px 4px 0 rgba(26, 18, 8, 0.85);
+}
+
+html[data-page-style="comic"] .cm-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 rgba(26, 18, 8, 0.9);
+}
+
+html[data-page-style="comic"] .cm-card-selected-green,
+html[data-page-style="comic"] .cm-card-selected-celebrate {
+  border-color: var(--cm-celebrate-accent);
+  box-shadow: 4px 4px 0 #1a1208, 0 0 0 2px var(--cm-celebrate-accent);
+}
+
+html[data-page-style="comic"] .cm-card-selected-purple,
+html[data-page-style="comic"] .cm-card-selected-roast {
+  border-color: var(--cm-roast-accent);
+  box-shadow: 4px 4px 0 #1a1208, 0 0 0 2px var(--cm-roast-accent);
+}
+
+html[data-page-style="comic"] .cm-mode-celebrate {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 235, 59, 0.9) 0%, transparent 45%),
+    radial-gradient(circle at 80% 70%, rgba(255, 193, 7, 0.7) 0%, transparent 40%),
+    linear-gradient(145deg, #66bb6a 0%, #43a047 55%, #2e7d32 100%);
+}
+
+html[data-page-style="comic"] .cm-mode-roast {
+  background:
+    radial-gradient(circle at 70% 20%, rgba(255, 87, 34, 0.85) 0%, transparent 45%),
+    radial-gradient(circle at 30% 80%, rgba(183, 28, 28, 0.6) 0%, transparent 40%),
+    linear-gradient(145deg, #212121 0%, #b71c1c 55%, #e53935 100%);
+}
+
+html[data-page-style="comic"] .cm-btn-generate {
+  border-width: 3px;
+  border-color: #1a1208;
+  box-shadow: 4px 4px 0 #1a1208;
+  font-family: var(--cm-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: linear-gradient(90deg, #ff9800 0%, #ff4081 100%);
+  color: #fff;
+}
+
+html[data-page-style="comic"] .cm-btn-generate:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 #1a1208;
+}
+
+html[data-page-style="comic"] .cm-btn-generate-roast {
+  background: linear-gradient(90deg, #ff6f00 0%, #d32f2f 100%);
+  color: #fff;
+}
+
+html[data-page-style="comic"] .cm-led-digit {
+  color: #ff6b35;
+  font-family: var(--cm-font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  background: #fff !important;
+  border-color: #1a1208 !important;
+  border-width: 3px !important;
+  box-shadow: 3px 3px 0 #1a1208;
+}
+
+html[data-page-style="comic"] .cm-landmark-img {
+  filter: none;
+  border: 3px solid #1a1208;
+  border-radius: 10px;
+  background: #fff;
+}
+
+html[data-page-style="comic"] .cm-topbar {
+  border-bottom-width: 3px;
+  border-bottom-color: #1a1208;
+  background: rgba(255, 245, 214, 0.92) !important;
+}
+
+html[data-page-style="comic"] .cm-style-quick {
+  border-color: #1a1208;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 2px 2px 0 rgba(26, 18, 8, 0.6);
+}
+
+html[data-page-style="comic"] .cm-style-quick-label {
+  font-family: var(--cm-font-display);
+  letter-spacing: 0.1em;
+}
+
+html[data-page-style="comic"] .cm-style-quick-btn {
+  font-family: var(--cm-font-display);
+}
+
+html[data-page-style="comic"] .cm-style-quick-btn[aria-pressed="true"] {
+  background: #fff;
+  box-shadow: 2px 2px 0 #1a1208;
+  outline: 2px solid #ff6f00;
+  outline-offset: 0;
+}
+
+html[data-page-style="comic"] .cm-slogan-text {
+  font-family: var(--cm-font-script);
+  font-size: 1.2rem;
+  line-height: 1.4;
+  text-shadow: none;
+}
+
+html[data-page-style="comic"] .cm-mode-card .cm-comic-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+html[data-page-style="comic"] .cm-logo-mark span.text-\[var\(--cm-green\)\] {
+  color: #ff6f00 !important;
+}
+
+html[data-page-style="comic"] .cm-logo-ball {
+  border-color: #1a1208 !important;
+  background: linear-gradient(135deg, #ffeb3b, #66bb6a) !important;
+  color: #1a1208 !important;
+  box-shadow: 2px 2px 0 #1a1208 !important;
+}

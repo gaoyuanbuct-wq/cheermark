@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <pattern id="halftone" width="10" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#1a1208" opacity="0.1"/>
+    </pattern>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe566"/>
+      <stop offset="50%" stop-color="#fff5d6"/>
+      <stop offset="100%" stop-color="#ffd4a8"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1200" fill="url(#sky)"/>
+  <rect width="800" height="1200" fill="url(#halftone)"/>
+  <!-- confetti -->
+  <rect x="80" y="120" width="10" height="10" fill="#66bb6a" opacity="0.7" transform="rotate(20 85 125)"/>
+  <rect x="620" y="200" width="8" height="8" fill="#42a5f5" opacity="0.7" transform="rotate(-15 624 204)"/>
+  <rect x="350" y="80" width="9" height="9" fill="#ff4081" opacity="0.65" transform="rotate(35 354 84)"/>
+  <circle cx="500" cy="350" r="5" fill="#ffeb3b" opacity="0.75"/>
+  <circle cx="150" cy="500" r="4" fill="#ff6b35" opacity="0.7"/>
+  <circle cx="700" cy="600" r="5" fill="#66bb6a" opacity="0.65"/>
+  <rect x="250" y="700" width="7" height="7" fill="#ab47bc" opacity="0.6" transform="rotate(10 253 703)"/>
+  <rect x="550" y="900" width="9" height="9" fill="#42a5f5" opacity="0.65" transform="rotate(-25 554 904)"/>
+  <circle cx="100" cy="950" r="4" fill="#ffeb3b" opacity="0.7"/>
+  <!-- action lines -->
+  <g stroke="#1a1208" stroke-width="2" stroke-linecap="round" opacity="0.08">
+    <line x1="40" y1="80" x2="180" y2="40"/>
+    <line x1="700" y1="100" x2="560" y2="50"/>
+    <line x1="100" y1="1100" x2="260" y2="1160"/>
+  </g>
+</svg>

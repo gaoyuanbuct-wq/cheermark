@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fredoka, Chewy, Patrick_Hand } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AgentationGuard } from "@/components/AgentationGuard";
 import { HappySeedsWatermark } from "@/components/HappySeedsWatermark";
 import "./globals.css";
+import "./cheermark-themes.css";
 import jsonMetadata from "../metadata.json";
 
 const geistSans = Geist({
@@ -17,6 +18,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin"],
+});
+
+const chewy = Chewy({
+  variable: "--font-chewy",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick-hand",
+  weight: "400",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = jsonMetadata;
 
 export default function RootLayout({
@@ -25,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-page-style="comic" suppressHydrationWarning>
       <head>
         {process.env.NODE_ENV === "production" && (
           <Script
@@ -36,7 +54,7 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} ${chewy.variable} ${patrickHand.variable} antialiased`}
       >
         {children}
         <HappySeedsWatermark />

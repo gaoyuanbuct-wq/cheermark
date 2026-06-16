@@ -127,3 +127,114 @@
 nextjs-portal {
   display: none !important;
 }
+
+/* ============================================
+   CheerMark design tokens (cm- prefix to avoid conflicts)
+   ============================================ */
+:root {
+  --cm-bg: #04120b;
+  --cm-bg-panel: #071a10;
+  --cm-bg-card: rgba(255, 255, 255, 0.04);
+  --cm-bg-card-hover: rgba(255, 255, 255, 0.08);
+  --cm-green: #00e676;
+  --cm-green-bright: #39ff9c;
+  --cm-purple: #a855f7;
+  --cm-purple-bright: #c084fc;
+  --cm-amber: #fbbf24;
+  --cm-text: #eafff3;
+  --cm-text-muted: #7da391;
+  --cm-border: rgba(0, 230, 118, 0.18);
+  --cm-border-soft: rgba(255, 255, 255, 0.09);
+}
+
+.cm-page {
+  color: var(--cm-text);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.cm-panel {
+  background: var(--cm-bg-panel);
+  border: 1px solid var(--cm-border-soft);
+  border-radius: 18px;
+}
+
+.cm-card {
+  background: var(--cm-bg-card);
+  border: 1.5px solid var(--cm-border-soft);
+  border-radius: 14px;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.cm-card:hover {
+  background: var(--cm-bg-card-hover);
+  transform: translateY(-1px);
+}
+
+.cm-card-selected-green {
+  border-color: var(--cm-green);
+  box-shadow: 0 0 18px rgba(0, 230, 118, 0.35), inset 0 0 12px rgba(0, 230, 118, 0.06);
+}
+
+.cm-card-selected-purple {
+  border-color: var(--cm-purple);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.4), inset 0 0 12px rgba(168, 85, 247, 0.08);
+}
+
+.cm-led-digit {
+  font-variant-numeric: tabular-nums;
+  color: var(--cm-amber);
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.9), 0 0 32px rgba(251, 191, 36, 0.5);
+  font-weight: 900;
+}
+
+.cm-btn-generate {
+  background: linear-gradient(180deg, rgba(0, 230, 118, 0.16), rgba(0, 230, 118, 0.05));
+  border: 2px solid var(--cm-green);
+  color: var(--cm-green-bright);
+  text-shadow: 0 0 16px rgba(0, 230, 118, 0.8);
+  box-shadow: 0 0 28px rgba(0, 230, 118, 0.35), inset 0 0 22px rgba(0, 230, 118, 0.08);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.cm-btn-generate:hover:not(:disabled) {
+  box-shadow: 0 0 44px rgba(0, 230, 118, 0.55), inset 0 0 30px rgba(0, 230, 118, 0.14);
+  transform: translateY(-1px);
+}
+
+.cm-btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cm-btn-generate-roast {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.18), rgba(168, 85, 247, 0.05));
+  border-color: var(--cm-purple);
+  color: var(--cm-purple-bright);
+  text-shadow: 0 0 16px rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.4), inset 0 0 22px rgba(168, 85, 247, 0.1);
+}
+
+.cm-btn-generate-roast:hover:not(:disabled) {
+  box-shadow: 0 0 44px rgba(168, 85, 247, 0.6), inset 0 0 30px rgba(168, 85, 247, 0.16);
+}
+
+@keyframes cm-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(680px); }
+}
+
+.cm-animate-scan {
+  animation: cm-scan 1.6s linear infinite;
+}
+
+@keyframes cm-pop-in {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.cm-animate-pop-in {
+  animation: cm-pop-in 0.35s ease forwards;
+}

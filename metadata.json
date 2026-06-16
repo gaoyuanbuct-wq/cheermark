@@ -1,5 +1,14 @@
 {
-  "title": "HappySeeds",
-  "description": "The future of building is here. HappySeeds uses an agentic layer to bridge the gap between intent and code. High-fidelity UI, zero friction. Grow what you feel today.",
-  "keywords": [ "HappySeeds", "VibeCoding", "AI Agents", "Software Engineering", "SaaS Builder", "UI-First Development" ]
+  "title": "CheerMark — Cheer landmarks with your score",
+  "description": "Celebrate or roast in 30 seconds. Pick a landmark, enter the score, auto-generate a match slogan, and light up the mark — fan art only.",
+  "keywords": [
+    "CheerMark",
+    "Football",
+    "MatchDay",
+    "Landmark",
+    "Fan Art",
+    "World Cup",
+    "Celebrate",
+    "Roast"
+  ]
 }
