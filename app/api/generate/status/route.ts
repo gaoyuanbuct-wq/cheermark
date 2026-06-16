@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createDbClient } from "@/db";
 import { getJob } from "@/lib/cheermark/job-store";
 
 export async function GET(req: NextRequest) {
@@ -7,15 +8,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing jobId" }, { status: 400 });
   }
 
-  const job = await getJob(jobId);
-  if (!job) {
-    return NextResponse.json({ error: "Job not found" }, { status: 404 });
+  const { db, sql } = createDbClient();
+  try {
+    const job = await getJob(db, jobId);
+    if (!job) {
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
+    }
+    return NextResponse.json({
+      jobId: job.id,
+      status: job.status,
+      imageUrl: job.imageUrl,
+      error: job.error,
+    });
+  } finally {
+    await sql.end({ timeout: 5 }).catch(() => {});
   }
-
-  return NextResponse.json({
-    jobId: job.id,
-    status: job.status,
-    imageUrl: job.imageUrl,
-    error: job.error,
-  });
 }

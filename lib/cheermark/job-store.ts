@@ -1,9 +1,10 @@
 /**
  * Persistent job store backed by Postgres via Drizzle.
- * Cross-isolate safe — works on Cloudflare Workers.
+ * Each function accepts a per-request DbClient — no global singletons.
+ * This prevents cross-isolate connection deadlocks on Cloudflare Workers.
  */
 
-import { db } from "@/db";
+import type { DbClient } from "@/db";
 import { generationJobs } from "@/db/schemas/generation-jobs";
 import { eq, lt } from "drizzle-orm";
 
@@ -19,21 +20,21 @@ export interface Job {
 
 const TTL_MS = 10 * 60 * 1000; // 10 min
 
-/** Purge jobs older than TTL (best-effort, fire-and-forget). */
-function purgeOld() {
+/** Best-effort purge of old jobs — fire-and-forget, never throws. */
+function purgeOld(db: DbClient): void {
   const cutoff = new Date(Date.now() - TTL_MS);
   db.delete(generationJobs)
     .where(lt(generationJobs.createdAt, cutoff))
-    .catch(() => { /* silent */ });
+    .catch(() => {});
 }
 
-export async function createJob(id: string): Promise<Job> {
-  purgeOld();
+export async function createJob(db: DbClient, id: string): Promise<Job> {
+  purgeOld(db);
   await db.insert(generationJobs).values({ id, status: "pending" });
   return { id, status: "pending", createdAt: Date.now() };
 }
 
-export async function getJob(id: string): Promise<Job | undefined> {
+export async function getJob(db: DbClient, id: string): Promise<Job | undefined> {
   const rows = await db
     .select()
     .from(generationJobs)
@@ -50,9 +51,10 @@ export async function getJob(id: string): Promise<Job | undefined> {
   };
 }
 
-export async function updateJob(id: string, patch: { status?: JobStatus; imageUrl?: string; error?: string }): Promise<void> {
-  await db
-    .update(generationJobs)
-    .set(patch)
-    .where(eq(generationJobs.id, id));
+export async function updateJob(
+  db: DbClient,
+  id: string,
+  patch: { status?: JobStatus; imageUrl?: string; error?: string },
+): Promise<void> {
+  await db.update(generationJobs).set(patch).where(eq(generationJobs.id, id));
 }

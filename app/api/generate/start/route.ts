@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createDbClient, type DbClient, type SqlClient } from "@/db";
 import { createJob, updateJob } from "@/lib/cheermark/job-store";
 import { buildComicPrompt } from "@/lib/cheermark/prompt-styles";
 
@@ -125,43 +126,65 @@ async function persistToOss(rawUrl: string): Promise<string> {
   return rawUrl;
 }
 
-async function runJob(jobId: string, payload: Record<string, unknown>) {
+/**
+ * Background job: runs inside waitUntil — connection lifecycle follows the work,
+ * not the HTTP response. sql.end() is called in finally so the connection is
+ * always released even if generation fails.
+ */
+async function runJob(
+  db: DbClient,
+  sql: SqlClient,
+  jobId: string,
+  payload: Record<string, unknown>,
+) {
   const prompt = buildPrompt(payload);
   let lastError = "";
 
-  // Attempt up to 2 times
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const rawUrl = await callImageApi(prompt);
-      const finalUrl = await persistToOss(rawUrl);
-      await updateJob(jobId, { status: "done", imageUrl: finalUrl });
-      return;
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
-      if (attempt < 2) {
-        // Wait 2s before retry
-        await new Promise(r => setTimeout(r, 2000));
+  try {
+    // Attempt up to 2 times
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const rawUrl = await callImageApi(prompt);
+        const finalUrl = await persistToOss(rawUrl);
+        await updateJob(db, jobId, { status: "done", imageUrl: finalUrl });
+        return;
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 2000));
+        }
       }
     }
+    await updateJob(db, jobId, { status: "failed", error: lastError });
+  } finally {
+    // Always release the connection after the job completes (or fails)
+    await sql.end({ timeout: 5 }).catch(() => {});
   }
-
-  await updateJob(jobId, { status: "failed", error: lastError });
 }
 
 export async function POST(req: NextRequest) {
   const payload = await req.json();
   const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  await createJob(jobId);
 
-  const jobPromise = runJob(jobId, payload);
+  // Per-request connection for createJob (used before response is sent)
+  const { db: reqDb, sql: reqSql } = createDbClient();
+  try {
+    await createJob(reqDb, jobId);
+  } finally {
+    await reqSql.end({ timeout: 5 }).catch(() => {});
+  }
+
+  // Separate connection for the background job — its lifetime extends past
+  // the HTTP response, so we close it inside runJob's finally block.
+  const { db: jobDb, sql: jobSql } = createDbClient();
+  const jobPromise = runJob(jobDb, jobSql, jobId, payload);
 
   // On Cloudflare Workers, waitUntil keeps the isolate alive until the job finishes.
-  // On Node.js dev server, just fire-and-forget (process stays alive anyway).
   const waitUntil = await getWaitUntil();
   if (waitUntil) {
     waitUntil(jobPromise);
   }
-  // intentionally not awaited on non-CF runtimes
+  // On Node.js dev server: fire-and-forget (process stays alive anyway)
 
   return NextResponse.json({ jobId });
 }

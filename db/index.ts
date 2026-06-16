@@ -1,19 +1,28 @@
-import 'server-only'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'postgres'
+import "server-only";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
-declare global {
-  var postgresClient: ReturnType<typeof postgres> | undefined
-}
+export type DbClient = ReturnType<typeof drizzle>;
+export type SqlClient = ReturnType<typeof postgres>;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set')
-}
+/**
+ * Create a fresh per-request postgres + drizzle client.
+ * Do NOT cache this across requests — Cloudflare Workers isolates
+ * share globalThis across concurrent requests, causing deadlocks.
+ *
+ * Caller is responsible for calling sql.end() when done.
+ */
+export function createDbClient(): { db: DbClient; sql: SqlClient } {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not set");
 
-if (!globalThis.postgresClient) {
-  globalThis.postgresClient = postgres(process.env.DATABASE_URL, {
+  const sql = postgres(url, {
     prepare: false,
-  })
-}
+    max: 1,          // one connection per request is enough
+    idle_timeout: 10,
+    connect_timeout: 10,
+  });
 
-export const db = drizzle(globalThis.postgresClient)
+  const db = drizzle(sql);
+  return { db, sql };
+}
