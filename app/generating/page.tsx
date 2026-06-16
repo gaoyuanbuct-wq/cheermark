@@ -80,25 +80,48 @@ function GeneratingInner() {
     setCountdown(0);
     startTicker();
 
-    fetch("/api/generate/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(80_000),
-    })
-      .then(r => r.json())
-      .then(({ imageUrl, error }) => {
-        if (error || !imageUrl) throw new Error(error ?? "No image URL");
+    // Read SSE stream — POST + manual stream reading (EventSource only supports GET)
+    (async () => {
+      try {
+        const res = await fetch("/api/generate/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(100_000), // 100s fallback
+        });
+
+        if (!res.body) throw new Error("No response body");
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        let result: { imageUrl?: string; error?: string; detail?: string } | null = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split("\n\n");
+          buf = parts.pop() ?? "";
+          for (const evt of parts) {
+            const line = evt.split("\n").find(l => l.startsWith("data:"));
+            if (line) result = JSON.parse(line.slice(5).trim());
+          }
+        }
+
+        if (!result || result.error || !result.imageUrl) {
+          throw new Error(result?.error ?? "No image URL in response");
+        }
+
         if (tickerRef.current) clearInterval(tickerRef.current);
         setProgress(100);
         setStageLabel("Done!");
-        const dest = `/result?imageUrl=${encodeURIComponent(imageUrl)}&${configQs}`;
+        const dest = `/result?imageUrl=${encodeURIComponent(result.imageUrl)}&${configQs}`;
         setTimeout(() => router.push(dest), 400);
-      })
-      .catch(() => {
+      } catch {
         if (tickerRef.current) clearInterval(tickerRef.current);
         startRetryCountdown(runGenerate);
-      });
+      }
+    })();
   }, [payload, router, configQs, startTicker, startRetryCountdown]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // fire once on mount

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildComicPrompt } from "@/lib/cheermark/prompt-styles";
 
+const SSE_HEADERS = {
+  "Content-Type": "text/event-stream; charset=utf-8",
+  "Cache-Control": "no-cache, no-transform",
+  "Connection": "keep-alive",
+  "X-Accel-Buffering": "no",
+};
+
 export const maxDuration = 120;
 
 const REACTUS_BASE_URL = process.env.REACTUS_BASE_URL ?? "";
@@ -116,9 +123,9 @@ async function persistToOss(rawUrl: string): Promise<string> {
 }
 
 /**
- * Synchronous image generation — runs entirely within the request lifetime.
- * CF Workers holds open requests with pending I/O indefinitely (no 30s cap).
- * Single attempt only — retrying doubles the wall time and risks exceeding limits.
+ * SSE streaming response — sends heartbeat pings every 10s so CF edge/WfP
+ * never sees an idle connection and resets it. The image generation runs
+ * inside the stream producer; the worker stays alive until controller.close().
  */
 export async function POST(req: NextRequest) {
   let payload: Record<string, unknown>;
@@ -128,16 +135,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  try {
-    const prompt = buildPrompt(payload);
-    const rawUrl = await callImageApi(prompt);
-    const imageUrl = await persistToOss(rawUrl);
-    return NextResponse.json({ imageUrl });
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
-    return NextResponse.json(
-      { error: "Image generation failed", detail },
-      { status: 500 },
-    );
-  }
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      // First byte immediately — connection is no longer idle
+      controller.enqueue(encoder.encode(": connected\n\n"));
+
+      // Heartbeat every 10s — well under the ~60s idle threshold
+      const hb = setInterval(() => {
+        try { controller.enqueue(encoder.encode(": ping\n\n")); } catch { /* stream may already be closing */ }
+      }, 10_000);
+
+      try {
+        const prompt = buildPrompt(payload);
+        const rawUrl = await callImageApi(prompt);
+        const imageUrl = await persistToOss(rawUrl);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ imageUrl })}\n\n`));
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Image generation failed", detail })}\n\n`));
+      } finally {
+        clearInterval(hb);
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, { status: 200, headers: SSE_HEADERS });
 }
