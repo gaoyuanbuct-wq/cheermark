@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildComicPrompt } from "@/lib/cheermark/prompt-styles";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const REACTUS_BASE_URL = process.env.REACTUS_BASE_URL ?? "";
 const API_KEY = process.env.HAPPYSEEDS_KEY ?? "";
@@ -87,7 +87,7 @@ async function callImageApi(prompt: string): Promise<string> {
       "x-bty-model": MODEL,
     },
     body: JSON.stringify({ model: MODEL, prompt, size: "1440x2560", output_format: "png", watermark: false }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(90_000),
   });
   if (!res.ok) {
     const txt = await res.text();
@@ -105,7 +105,7 @@ async function persistToOss(rawUrl: string): Promise<string> {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
       body: JSON.stringify({ project_id: PROJECT_ID, url: rawUrl }),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(15_000),
     });
     if (ossRes.ok) {
       const d = await ossRes.json();
@@ -117,9 +117,8 @@ async function persistToOss(rawUrl: string): Promise<string> {
 
 /**
  * Synchronous image generation — runs entirely within the request lifetime.
- * CF Workers holds open requests with pending I/O indefinitely (no 30s cap),
- * so this is reliable where waitUntil background tasks are not.
- * Retries once on failure to handle transient upstream errors.
+ * CF Workers holds open requests with pending I/O indefinitely (no 30s cap).
+ * Single attempt only — retrying doubles the wall time and risks exceeding limits.
  */
 export async function POST(req: NextRequest) {
   let payload: Record<string, unknown>;
@@ -129,24 +128,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const prompt = buildPrompt(payload);
-  let lastError = "";
-
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const rawUrl = await callImageApi(prompt);
-      const imageUrl = await persistToOss(rawUrl);
-      return NextResponse.json({ imageUrl });
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err);
-      if (attempt < 2) {
-        await new Promise(r => setTimeout(r, 1500));
-      }
-    }
+  try {
+    const prompt = buildPrompt(payload);
+    const rawUrl = await callImageApi(prompt);
+    const imageUrl = await persistToOss(rawUrl);
+    return NextResponse.json({ imageUrl });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: "Image generation failed", detail },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json(
-    { error: "Image generation failed", detail: lastError },
-    { status: 500 },
-  );
 }

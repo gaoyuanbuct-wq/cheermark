@@ -16,7 +16,7 @@ const STAGES = [
   { pct: 45, label: "AI is painting the landmark…" },
   { pct: 62, label: "Adding light effects…" },
   { pct: 78, label: "Finishing touches…" },
-  { pct: 90, label: "Almost there…" }, // caps at 90 — only reaches 100 on real done
+  { pct: 90, label: "Almost there — complex scenes can take up to 1 min…" },
 ];
 
 function GeneratingInner() {
@@ -84,7 +84,7 @@ function GeneratingInner() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(80_000),
     })
       .then(r => r.json())
       .then(({ imageUrl, error }) => {
