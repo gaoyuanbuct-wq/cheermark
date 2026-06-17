@@ -15,7 +15,7 @@ export function useCheermarkConfig() {
   const [awayScore, setAwayScore] = useState(1);
   const [landmarkId, setLandmarkId] = useState("sugarloaf");
   const [selectedEffects, setSelectedEffects] = useState<EffectType[]>([
-    "light-projection",
+    "light-projection", "led-string", "fireworks",
   ]);
   const [sloganVariant, setSloganVariant] = useState(0);
 
