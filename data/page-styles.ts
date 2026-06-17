@@ -12,20 +12,20 @@ export interface PageStyleOption {
 
 export const pageStyles: PageStyleOption[] = [
   {
-    id: "stadium",
-    name: "Stadium Night",
-    shortLabel: "Night",
-    tagline: "Dark cinematic look",
-    emoji: "🌃",
-    backgroundUrl: "/styles/stadium-bg.svg",
-  },
-  {
     id: "comic",
     name: "Comic Pop",
     shortLabel: "Comic",
     tagline: "Cartoon manga look",
     emoji: "💥",
     backgroundUrl: "/styles/comic-bg.svg",
+  },
+  {
+    id: "stadium",
+    name: "Stadium Night",
+    shortLabel: "Night",
+    tagline: "Dark cinematic look",
+    emoji: "🌃",
+    backgroundUrl: "/styles/stadium-bg.svg",
   },
 ];
 

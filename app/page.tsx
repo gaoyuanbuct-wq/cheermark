@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EffectType } from "@/types/cheermark";
 import { countries, getCountry } from "@/data/countries";
@@ -54,6 +54,17 @@ export default function Home() {
   const [showHelp, setShowHelp] = useState(false);
   const [showLandmarkPicker, setShowLandmarkPicker] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [showHeroBanner, setShowHeroBanner] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem("cm_hero_seen");
+    if (!seen) setShowHeroBanner(true);
+  }, []);
+
+  function dismissHeroBanner() {
+    localStorage.setItem("cm_hero_seen", "1");
+    setShowHeroBanner(false);
+  }
 
   const isComic = pageStyle === "comic";
   const isRoast = mode === "roast";
@@ -99,18 +110,21 @@ function ScoreSection({ isComic, homeCountryId, awayCountryId, homeScore, awaySc
   renderTeamChip, renderScoreBox }: ScoreSectionProps) {
   return (
     <section>
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-1 flex items-center gap-2">
         <ScoreboardIcon className="size-4 text-[var(--cm-text-muted)]" />
         <h2 className={`text-xs font-black tracking-wider text-[var(--cm-text)] ${isComic ? "cm-style-heading text-sm" : ""}`}>
           1. ENTER SCORE
         </h2>
       </div>
+      <p className={`mb-2.5 text-[11px] text-[var(--cm-text-muted)] ${isComic ? "cm-comic-label" : ""}`}>
+        👇 Tap the flags to pick <b>YOUR teams</b>, then set the real match score
+      </p>
       <div className="flex items-start gap-2">
-        {renderTeamChip(homeCountryId, setHomeCountryId, awayCountryId)}
+        <div className="cm-flag-pulse flex-1">{renderTeamChip(homeCountryId, setHomeCountryId, awayCountryId)}</div>
         {renderScoreBox(homeScore, setHomeScore)}
         <span className="self-center pb-6 text-xl font-black text-[var(--cm-text-muted)]">–</span>
         {renderScoreBox(awayScore, setAwayScore)}
-        {renderTeamChip(awayCountryId, setAwayCountryId, homeCountryId)}
+        <div className="cm-flag-pulse flex-1">{renderTeamChip(awayCountryId, setAwayCountryId, homeCountryId)}</div>
       </div>
     </section>
   );
@@ -171,6 +185,34 @@ function ScoreSection({ isComic, homeCountryId, awayCountryId, homeScore, awaySc
           onHelp={() => setShowHelp(true)}
         />
 
+        {/* ── HERO BANNER ──────────────────────────────────────────────── */}
+        {showHeroBanner && (
+          <div className={`cm-animate-slide-down mx-4 mt-2 overflow-hidden rounded-2xl border-2 ${isRoast ? "border-[var(--cm-purple)]" : "border-[var(--cm-green)]"}`}
+            style={{
+              background: isRoast
+                ? "linear-gradient(135deg, rgba(168,85,247,0.18), rgba(168,85,247,0.06))"
+                : isComic
+                  ? "linear-gradient(135deg, #ff9800 0%, #ff4081 100%)"
+                  : "linear-gradient(135deg, rgba(0,230,118,0.18), rgba(0,230,118,0.06))",
+            }}>
+            <div className="flex items-start gap-3 px-4 py-3.5">
+              <span className="mt-0.5 text-2xl shrink-0">🏆</span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-black leading-snug ${isComic ? "cm-style-heading text-white" : "text-[var(--cm-text)]"}`}>
+                  Enter YOUR match score
+                </p>
+                <p className={`mt-1 text-[11px] leading-relaxed ${isComic ? "text-white/90" : "text-[var(--cm-text-muted)]"}`}>
+                  Tap the flags to pick your teams, add the real scoreline → AI lights up a world landmark with it in ~45s
+                </p>
+              </div>
+              <button type="button" onClick={dismissHeroBanner}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black tracking-wider ${isComic ? "bg-white/20 text-white" : "bg-[var(--cm-bg-card)] text-[var(--cm-text-muted)]"}`}>
+                Got it →
+              </button>
+            </div>
+          </div>
+        )}
+
         <main className="flex-1 space-y-5 px-4 pt-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
 
           {/* ── 1. SCORE ─────────────────────────────────────────────────── */}
@@ -212,7 +254,10 @@ function ScoreSection({ isComic, homeCountryId, awayCountryId, homeScore, awaySc
 
         {/* ── BOTTOM GENERATE BAR ──────────────────────────────────────── */}
         <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-lg border-t border-[var(--cm-border-soft)] bg-[var(--cm-bg)]/95 backdrop-blur-md">
-          <div className="px-4 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <p className="pt-2 text-center text-[10px] text-[var(--cm-text-muted)]">
+            ✨ Your score · Your teams · A one-of-a-kind AI image in ~45s
+          </p>
+          <div className="px-4 pt-1.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <button type="button" onClick={handleGenerate}
               className={`cm-btn-generate w-full rounded-2xl py-3.5 font-black tracking-[0.12em] ${isRoast ? "cm-btn-generate-roast" : ""}`}
             >
@@ -232,11 +277,12 @@ function ScoreSection({ isComic, homeCountryId, awayCountryId, homeScore, awaySc
               <h3 className="mb-2 text-base font-black text-[var(--cm-text)]">
                 How Cheer<span className="text-[var(--cm-green)]">Mark</span> works
               </h3>
-              <ol className="mb-3 list-decimal space-y-1 pl-4 text-xs text-[var(--cm-text-muted)]">
-                <li>Pick your teams and enter the score.</li>
-                <li>We auto-pick the best landmark — tap to change it.</li>
-                <li>Tap Generate — AI lights it up with your score!</li>
-              </ol>
+              <ul className="mb-3 space-y-2 text-xs text-[var(--cm-text-muted)]">
+                <li>🎉 <b className="text-[var(--cm-text)]">Celebrate or Roast</b> — pick your vibe at the top.</li>
+                <li>🌃 <b className="text-[var(--cm-text)]">Comic / Night</b> — switch the art style with LOOK.</li>
+                <li>⚽ <b className="text-[var(--cm-text)]">Teams &amp; score</b> — we auto-pick the landmark for you.</li>
+                <li>✦ Hit <b className="text-[var(--cm-text)]">Generate</b> — AI lights it up!</li>
+              </ul>
               <button type="button" onClick={() => setShowHelp(false)}
                 className="cm-btn-generate w-full rounded-xl py-2.5 text-xs font-black tracking-widest">
                 GOT IT

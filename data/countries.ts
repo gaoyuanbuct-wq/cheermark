@@ -12,7 +12,7 @@ export const countries: Country[] = [
   { id: "netherlands", name: "Netherlands", code: "NED", colors: ["#AE1C28", "#FFFFFF", "#21468B"], mascot: "an orange lion" },
   { id: "usa",         name: "USA",         code: "USA", colors: ["#B22234", "#FFFFFF", "#3C3B6E"], mascot: "a bald eagle" },
   { id: "mexico",      name: "Mexico",      code: "MEX", colors: ["#006847", "#FFFFFF", "#CE1126"], mascot: "a golden eagle" },
-  { id: "japan",       name: "Japan",       code: "JPN", colors: ["#FFFFFF", "#BC002D"],            mascot: "a samurai crane" },
+  { id: "japan",       name: "Japan",       code: "JPN", colors: ["#FFFFFF", "#BC002D"],            mascot: "a Japanese green pheasant" },
   { id: "south-korea", name: "South Korea", code: "KOR", colors: ["#FFFFFF", "#CD2E3A"],            mascot: "a tiger" },
   { id: "australia",   name: "Australia",   code: "AUS", colors: ["#00008B", "#FFFFFF", "#FF0000"], mascot: "a kangaroo" },
   { id: "morocco",     name: "Morocco",     code: "MAR", colors: ["#C1272D", "#006233"],            mascot: "an Atlas lion" },
